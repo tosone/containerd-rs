@@ -1,0 +1,36 @@
+[package]
+name = "containerd"
+version = "0.1.0"
+edition = "2021"
+readme = "README.md"
+repository = "https://github.com/tosone/containerd-rs"
+homepage = "https://github.com/tosone/containerd-rs"
+description = "containerd sdk"
+
+[[bin]]
+name = "ctr"
+path = "./src/ctr.rs"
+
+[dependencies]
+# protobuf = { version = "~2.25", features = ["with-bytes"] }
+# protobuf = { git ="https://github.com/stepancheg/rust-protobuf.git", rev = "aa516f28", features = ["with-bytes"]}
+# grpc = "~0.8"
+# grpc-protobuf = "~0.8"
+# serde = "~1.0"
+tonic = "*"
+prost = "~0.9"
+prost-types = "~0.9"
+tower = {version = "0.4"}
+tokio = { version = "~1.14", features = ["rt-multi-thread", "time", "fs", "macros", "net"] }
+# tokio = {version = "1.0", features = ["rt-multi-thread", "time", "fs", "macros", "net"]}
+futures = {version = "0.3", default-features = false, features = ["alloc"]}
+
+[build-dependencies]
+# protobuf-codegen = { git ="https://github.com/stepancheg/rust-protobuf.git", rev = "aa516f28" }
+walkdir = "~2.3"
+tonic-build = {version = "~0.6",features = ["prost"]}
+# protoc-rust-grpc = { git ="https://github.com/stepancheg/grpc-rust.git" }
+
+# [features]
+# default = ["with-serde"]
+# with-serde = ["protobuf/with-serde"]
