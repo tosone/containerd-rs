@@ -1,45 +1,60 @@
-// use ttrpc::client::Client as ttClient;
-// use ttrpc::context;
+use std::convert::TryFrom;
+use std::string::String;
+use tokio::net::UnixStream;
+use tonic::transport::{Channel, Endpoint, Uri};
+use tower::service_fn;
 
-// use crate::apis::images::ListImagesRequest;
-// use crate::apis::images_ttrpc::ImagesClient;
+pub mod namespaces {
+    include!(concat!("./apis/containerd.services.namespaces.v1.rs"));
+}
 
-#[derive(Clone, Debug)]
+use namespaces::namespaces_client::NamespacesClient;
+use namespaces::ListNamespacesRequest;
+
 pub struct Client {
-    #[warn(dead_code)]
-    platform: Option<String>,
+    pub runtime: Option<String>,
+    pub defaultns: Option<String>,
+    pub address: String,
 }
 
 impl Client {
-    #[allow(dead_code)]
-    fn new() -> Client {
-        let c = Client {
-            platform: Some("linux".to_string()),
+    #[tokio::main]
+    pub async fn new(
+        runtime: Option<String>,
+        defaultns: Option<String>,
+        address: Option<String>,
+    ) -> Self {
+        let address = match address {
+            Some(address) => address,
+            None => "/run/containerd/containerd.sock".to_string(),
         };
-        // let m = ttClient::connect("unix:///run/containerd/containerd.sock").unwrap();
-        // let images_client = ImagesClient::new(m);
-        // let ctx = context::with_timeout(0);
-        // let req = ListImagesRequest {
-        //     filters: ::protobuf::RepeatedField::new(),
-        //     unknown_fields: ::protobuf::UnknownFields::new(),
-        //     ..ListImagesRequest::default()
-        // };
-        // let result = images_client.list(ctx, &req);
-        // println!("{:?}", result);
-        c
+        Self {
+            runtime: Some(runtime.unwrap_or("linux".to_string())),
+            defaultns: Some(defaultns.unwrap_or("default".to_string())),
+            address,
+        }
     }
-    #[allow(dead_code)]
-    fn connect(&self) -> bool {
-        true
-    }
-}
 
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn larger_can_hold_smaller() {
-        let client = Client::new();
-        assert!(client.connect());
+    pub async fn connect(self) -> Result<Channel, Box<dyn std::error::Error>> {
+        let channel = Endpoint::try_from("http://127.0.0.1:80")?
+            .connect_with_connector(service_fn(|_: Uri| {
+                let conn = "/run/containerd/containerd.sock";
+                UnixStream::connect(conn)
+            }))
+            .await?;
+        Ok(channel)
+    }
+
+    pub async fn list_namespaces(self) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        let channel = self.connect().await?;
+        let mut client = NamespacesClient::new(channel);
+        let request = tonic::Request::new(ListNamespacesRequest { filter: "".into() });
+        let response = client.list(request).await?;
+        let mut result = Vec::new();
+        for item in response.into_inner().namespaces {
+            println!("{:?}", item);
+            result.push(item.name);
+        }
+        Ok(result)
     }
 }
