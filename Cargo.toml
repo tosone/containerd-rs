@@ -6,13 +6,16 @@ readme = "README.md"
 repository = "https://github.com/tosone/containerd-rs"
 homepage = "https://github.com/tosone/containerd-rs"
 description = "containerd sdk"
+keywords = ["image", "containerd", "sdk", "oci"]
+license = "MIT"
+emil = "i@tosone.cn"
 
 [[bin]]
 name = "ctr"
 path = "./src/cmd/ctr.rs"
 
 [dependencies]
-tonic = "*"
+tonic = "~0.6"
 prost = "~0.9"
 prost-types = "~0.9"
 tower = {version = "0.4"}
