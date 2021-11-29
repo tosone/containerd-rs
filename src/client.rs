@@ -1,15 +1,12 @@
+use prost::alloc::vec;
 use std::convert::TryFrom;
 use std::string::String;
 use tokio::net::UnixStream;
 use tonic::transport::{Channel, Endpoint, Uri};
 use tower::service_fn;
 
-pub mod namespaces {
-    include!(concat!("./apis/containerd.services.namespaces.v1.rs"));
-}
-
-use namespaces::namespaces_client::NamespacesClient;
-use namespaces::ListNamespacesRequest;
+use super::apis::images::{images_client::ImagesClient, ListImagesRequest};
+use super::apis::namespaces::{namespaces_client::NamespacesClient, ListNamespacesRequest};
 
 pub struct Client {
     pub runtime: Option<String>,
@@ -52,7 +49,26 @@ impl Client {
         let response = client.list(request).await?;
         let mut result = Vec::new();
         for item in response.into_inner().namespaces {
-            println!("{:?}", item);
+            result.push(item.name);
+        }
+        Ok(result)
+    }
+
+    pub async fn list_images(
+        self,
+        namespace: &str,
+    ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        let channel = self.connect().await?;
+        let mut client = ImagesClient::new(channel);
+        let mut request = tonic::Request::new(ListImagesRequest {
+            filters: vec::Vec::new(),
+        });
+        request
+            .metadata_mut()
+            .insert("containerd-namespace", namespace.parse().unwrap());
+        let response = client.list(request).await?;
+        let mut result = Vec::new();
+        for item in response.into_inner().images {
             result.push(item.name);
         }
         Ok(result)
