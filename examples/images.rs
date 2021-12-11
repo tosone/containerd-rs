@@ -2,7 +2,7 @@ use containerd::client::Client;
 
 #[tokio::main]
 async fn example(client: Client) {
-    let result = client.list_images("default").await;
+    let result = client.list_images("default".to_string()).await;
     match result {
         Ok(images) => {
             for image in images {

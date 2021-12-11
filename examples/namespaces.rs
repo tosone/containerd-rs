@@ -6,7 +6,7 @@ async fn example(client: Client) {
     match result {
         Ok(namespaces) => {
             for namespace in namespaces {
-                println!("{}", namespace);
+                println!("{}", namespace.name);
             }
         }
         Err(e) => println!("{}", e),
